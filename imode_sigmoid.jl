@@ -1,6 +1,6 @@
 module ImodeSigmoid
 
-using BifurcationKit, Plots, Parameters, NLsolve
+using BifurcationKit, Plots, Parameters, NLsolve, Interpolations
 const BK = BifurcationKit
 
 const I0 = 1e-12 # A
@@ -60,6 +60,25 @@ function Imode_sigmoid_sim(Iin_range, params)
 	return (Iin.(br.branch.param), Iout.(br.branch.x2, Vgain))
 end
 
-export Imode_sigmoid_sim
+function Imode_sigmoid_val(Iin, params)
+
+	Irange = (0,1e-6)
+	Iin_res, Iout_res = Imode_sigmoid_sim(Irange, params)
+
+	if Iin_res[1] > Iin_res[end]
+		Iin_res = reverse(Iin_res)
+		Iout_res = reverse(Iout_res)
+	end
+
+	Interpolations.deduplicate_knots!(Iin_res, move_knots = true)
+	Interpolations.deduplicate_knots!(Iout_res, move_knots = true)
+
+	sigmoid_int = linear_interpolation(Iin_res, Iout_res, extrapolation_bc=Line());
+
+	return sigmoid_int(Iin)
+
+end
+
+export Imode_sigmoid_val
 
 end
