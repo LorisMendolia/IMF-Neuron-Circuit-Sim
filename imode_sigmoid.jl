@@ -89,6 +89,27 @@ function Imode_sigmoid_val(Iin, params)
 
 end
 
-export Imode_sigmoid_val
+function Imode_sigmoid_val_nomem(Iin, params)
+
+	# @unpack Ithr, Igain, Ilin = params
+
+	Irange = (0,1e-6)
+	Iin_res, Iout_res = Imode_sigmoid_sim(Irange, params)
+
+	if Iin_res[1] > Iin_res[end]
+		Iin_res = reverse(Iin_res)
+		Iout_res = reverse(Iout_res)
+	end
+
+	Interpolations.deduplicate_knots!(Iin_res, move_knots = true)
+	Interpolations.deduplicate_knots!(Iout_res, move_knots = true)
+
+	sigmoid_int = linear_interpolation(Iin_res, Iout_res, extrapolation_bc=Line());
+
+return sigmoid_int(Iin)
+
+end
+
+export Imode_sigmoid_val, Imode_sigmoid_val_nomem
 
 end
