@@ -1,6 +1,6 @@
 module ImodeSigmoid
 
-using BifurcationKit, Plots, Parameters, NLsolve, Interpolations
+using BifurcationKit, Parameters, NLsolve, Interpolations
 const BK = BifurcationKit
 
 const I0 = 1e-12 # A
