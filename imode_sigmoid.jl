@@ -34,7 +34,7 @@ V_N_diode(I) = UT/κ * log(I/I0)
 Iin_diode(Vin) = I0 * exp(κ*(Vdd-Vin)/UT)
 Iout(Vout, Vgain) = I0 * exp((κ*Vout)/UT) / (1 + exp(κ*(Vout-Vgain)/UT))
 
-function Imode_sigmoid_sim(Iin_range, params)
+function Imode_sigmoid_sim(Iin_range, params; return_V = false)
 
 	@unpack Ithr, Igain, Ilin = params
 
@@ -57,7 +57,12 @@ function Imode_sigmoid_sim(Iin_range, params)
 	opts = ContinuationPar(p_min = V_P_diode(Iin_range[2]), p_max = V_P_diode(Iin_range[1]), n_inversion = 50, ds = 1e-6, dsmin = 1e-12, dsmax = 1e-3, max_steps = 1000, nev = 3)
 	br = continuation(prob, PALC(), opts; normC = norminf, bothside = true)
 
-	return (Iin.(br.branch.param), Iout.(br.branch.x2, Vgain))
+	if return_V
+		return (br.branch.param, br.branch.x2)
+	else
+		return (Iin_diode.(br.branch.param), Iout.(br.branch.x2, Vgain))
+	end
+
 end
 
 const memo_dict = Dict{NamedTuple, Interpolations.Extrapolation}()
