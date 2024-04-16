@@ -71,8 +71,8 @@ const memo_dict_Vout = Dict{NamedTuple, Interpolations.Extrapolation}()
 function Imode_sigmoid_eval_Iout(Iin, params)
 
 	# Check if the model is already computed
-	if haskey(memo_dict, params)
-		sigmoid_int = memo_dict[params]
+	if haskey(memo_dict_Iout, params)
+		sigmoid_int = memo_dict_Iout[params]
 	else
 
 		Irange = (0,1e-6)
@@ -88,7 +88,7 @@ function Imode_sigmoid_eval_Iout(Iin, params)
 
 		sigmoid_int = linear_interpolation(Iin_res, Iout_res, extrapolation_bc=Line());
 
-		memo_dict[params] = sigmoid_int
+		memo_dict_Iout[params] = sigmoid_int
 	end
 
 	return sigmoid_int(Iin)
@@ -103,8 +103,8 @@ function Imode_sigmoid_eval_Vout(Iin, params)
 	params2 = (Ithr = Ithr, Ilin = Ilin)
 
 	# Check if the model is already computed
-	if haskey(memo_dict2, params2)
-		sigmoid_V_int = memo_dict2[params2]
+	if haskey(memo_dict_Vout, params2)
+		sigmoid_V_int = memo_dict_Vout[params2]
 	else
 
 		Irange = (0,1e-6)
@@ -122,7 +122,7 @@ function Imode_sigmoid_eval_Vout(Iin, params)
 
 		sigmoid_V_int = linear_interpolation(Iin_res, Vout_res, extrapolation_bc=Line());
 
-		memo_dict2[params2] = sigmoid_V_int
+		memo_dict_Vout[params2] = sigmoid_V_int
 	end
 
 	return Iout(sigmoid_V_int(Iin), Vgain)
