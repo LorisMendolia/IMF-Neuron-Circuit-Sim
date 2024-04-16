@@ -149,6 +149,20 @@ function Imode_sigmoid_eval_nomem(Iin, params)
 
 end
 
-export Imode_sigmoid_val, Imode_sigmoid_val_nomem, Imode_sigmoid_val2
+function Imode_sigmoid_eval(Iin, params; var_gain = false, use_mem = true)
+
+	if use_mem
+		if var_gain
+			return Imode_sigmoid_eval_Vout(Iin, params)
+		else
+			return Imode_sigmoid_eval_Iout(Iin, params)
+		end
+	else
+		return Imode_sigmoid_eval_nomem(Iin, params)
+	end
+
+end
+
+export Imode_sigmoid_eval
 
 end
