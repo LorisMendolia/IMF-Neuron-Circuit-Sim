@@ -31,7 +31,7 @@ end
 V_P_diode(I) = Vdd - UT/κ * log(I/I0)
 V_N_diode(I) = UT/κ * log(I/I0)
 
-Iin(Vin) = I0 * exp(κ*(Vdd-Vin)/UT)
+Iin_diode(Vin) = I0 * exp(κ*(Vdd-Vin)/UT)
 Iout(Vout, Vgain) = I0 * exp((κ*Vout)/UT) / (1 + exp(κ*(Vout-Vgain)/UT))
 
 function Imode_sigmoid_sim(Iin_range, params)
