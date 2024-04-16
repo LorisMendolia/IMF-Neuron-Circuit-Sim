@@ -66,6 +66,7 @@ function Imode_sigmoid_sim(Iin_range, params; return_V = false)
 end
 
 const memo_dict = Dict{NamedTuple, Interpolations.Extrapolation}()
+const memo_dict2 = Dict{NamedTuple, Interpolations.Extrapolation}()
 
 function Imode_sigmoid_val(Iin, params)
 
@@ -94,6 +95,39 @@ function Imode_sigmoid_val(Iin, params)
 
 end
 
+function Imode_sigmoid_val2(Iin, params)
+
+	@unpack Ithr, Igain, Ilin = params
+
+	Vgain = V_N_diode(Igain)
+	params2 = (Ithr = Ithr, Ilin = Ilin)
+
+	# Check if the model is already computed
+	if haskey(memo_dict2, params2)
+		sigmoid_V_int = memo_dict2[params2]
+	else
+
+		Irange = (0,1e-6)
+		Vin_res, Vout_res = Imode_sigmoid_sim(Irange, params, return_V = true)
+
+		Iin_res = Iin_diode.(Vin_res)
+
+		if Iin_res[1] > Iin_res[end]
+			Iin_res = reverse(Iin_res)
+			Vout_res = reverse(Vout_res)
+		end
+
+		Interpolations.deduplicate_knots!(Iin_res, move_knots = true)
+		Interpolations.deduplicate_knots!(Vout_res, move_knots = true)
+
+		sigmoid_V_int = linear_interpolation(Iin_res, Vout_res, extrapolation_bc=Line());
+
+		memo_dict2[params2] = sigmoid_V_int
+	end
+
+	return Iout(sigmoid_V_int(Iin), Vgain)
+end
+
 function Imode_sigmoid_val_nomem(Iin, params)
 
 	# @unpack Ithr, Igain, Ilin = params
@@ -115,6 +149,6 @@ return sigmoid_int(Iin)
 
 end
 
-export Imode_sigmoid_val, Imode_sigmoid_val_nomem
+export Imode_sigmoid_val, Imode_sigmoid_val_nomem, Imode_sigmoid_val2
 
 end
