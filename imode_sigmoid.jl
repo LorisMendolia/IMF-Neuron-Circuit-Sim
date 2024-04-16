@@ -65,10 +65,10 @@ function Imode_sigmoid_sim(Iin_range, params; return_V = false)
 
 end
 
-const memo_dict = Dict{NamedTuple, Interpolations.Extrapolation}()
-const memo_dict2 = Dict{NamedTuple, Interpolations.Extrapolation}()
+const memo_dict_Iout = Dict{NamedTuple, Interpolations.Extrapolation}()
+const memo_dict_Vout = Dict{NamedTuple, Interpolations.Extrapolation}()
 
-function Imode_sigmoid_val(Iin, params)
+function Imode_sigmoid_eval_Iout(Iin, params)
 
 	# Check if the model is already computed
 	if haskey(memo_dict, params)
@@ -95,7 +95,7 @@ function Imode_sigmoid_val(Iin, params)
 
 end
 
-function Imode_sigmoid_val2(Iin, params)
+function Imode_sigmoid_eval_Vout(Iin, params)
 
 	@unpack Ithr, Igain, Ilin = params
 
@@ -128,7 +128,7 @@ function Imode_sigmoid_val2(Iin, params)
 	return Iout(sigmoid_V_int(Iin), Vgain)
 end
 
-function Imode_sigmoid_val_nomem(Iin, params)
+function Imode_sigmoid_eval_nomem(Iin, params)
 
 	# @unpack Ithr, Igain, Ilin = params
 
