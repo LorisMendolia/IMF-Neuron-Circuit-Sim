@@ -145,7 +145,7 @@ function Imode_sigmoid_eval_nomem(Iin, params)
 
 	sigmoid_int = linear_interpolation(Iin_res, Iout_res, extrapolation_bc=Line());
 
-return sigmoid_int(Iin)
+	return sigmoid_int(Iin)
 
 end
 
