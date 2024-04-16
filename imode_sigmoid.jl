@@ -16,6 +16,7 @@ Ilin1(V1,Vout) = I0 * exp((κ*V1 - Vout)/UT) * (1 - exp(-(V1-Vout)/UT))
 Ilin2(Vout,V2) = I0 * exp((κ*Vout - V2)/UT) * (1 - exp(-(Vout-V2)/UT))
 Ilin3(Vlin,V2) = I0 * exp(κ*Vlin/UT) * (1 - exp(-V2/UT));
 
+# Circuit "dynamic" equations
 function Imode_sigmoid_V(x,pars)
 
 	@unpack Vin, Vlin, Vthr = pars
@@ -28,12 +29,15 @@ function Imode_sigmoid_V(x,pars)
     
 end
 
+# Curent mirror diode current-voltage conversions
 V_P_diode(I) = Vdd - UT/κ * log(I/I0)
 V_N_diode(I) = UT/κ * log(I/I0)
 
+# Input and output voltage to current conversions
 Iin_diode(Vin) = I0 * exp(κ*(Vdd-Vin)/UT)
 Iout(Vout, Vgain) = I0 * exp((κ*Vout)/UT) / (1 + exp(κ*(Vout-Vgain)/UT))
 
+# Simulation of the sigmoid characteristic using BifurcationKit
 function Imode_sigmoid_sim(Iin_range, params; return_V = false)
 
 	@unpack Ithr, Igain, Ilin = params
@@ -57,6 +61,7 @@ function Imode_sigmoid_sim(Iin_range, params; return_V = false)
 	opts = ContinuationPar(p_min = V_P_diode(Iin_range[2]), p_max = V_P_diode(Iin_range[1]), n_inversion = 50, ds = 1e-6, dsmin = 1e-12, dsmax = 1e-3, max_steps = 1000, nev = 3)
 	br = continuation(prob, PALC(), opts; normC = norminf, bothside = true)
 
+	# For optimization reasons, we either want to return the output voltage or convert it directly to the output current
 	if return_V
 		return (br.branch.param, br.branch.x2)
 	else
@@ -65,9 +70,11 @@ function Imode_sigmoid_sim(Iin_range, params; return_V = false)
 
 end
 
+# Storage for already computed sigmoid models
 const memo_dict_Iout = Dict{NamedTuple, Interpolations.Extrapolation}()
 const memo_dict_Vout = Dict{NamedTuple, Interpolations.Extrapolation}()
 
+# Evaluate the output current of the sigmoid for a given input current
 function Imode_sigmoid_eval_Iout(Iin, params)
 
 	# Check if the model is already computed
@@ -75,6 +82,8 @@ function Imode_sigmoid_eval_Iout(Iin, params)
 		sigmoid_int = memo_dict_Iout[params]
 	else
 
+		# Simulate the sigmoid for a given current range and interpolate
+		# TODO: Make the current range adaptive, to make sure saturation is reached at the end of the simulation and a linear extrapolation is valid
 		Irange = (0,1e-6)
 		Iin_res, Iout_res = Imode_sigmoid_sim(Irange, params)
 
@@ -86,7 +95,7 @@ function Imode_sigmoid_eval_Iout(Iin, params)
 		Interpolations.deduplicate_knots!(Iin_res, move_knots = true)
 		Interpolations.deduplicate_knots!(Iout_res, move_knots = true)
 
-		sigmoid_int = linear_interpolation(Iin_res, Iout_res, extrapolation_bc=Line());
+		sigmoid_int = linear_interpolation(Iin_res, Iout_res, extrapolation_bc=Line()); # In the inactive and saturation regions, we extrapolate the response to a line
 
 		memo_dict_Iout[params] = sigmoid_int
 	end
@@ -95,10 +104,12 @@ function Imode_sigmoid_eval_Iout(Iin, params)
 
 end
 
+# Evaluate the output voltage of the sigmoid for a given input current
 function Imode_sigmoid_eval_Vout(Iin, params)
 
 	@unpack Ithr, Igain, Ilin = params
 
+	# We do not treat Vgain as a parameter to avoid recomputing the model every time it changes
 	Vgain = V_N_diode(Igain)
 	params2 = (Ithr = Ithr, Ilin = Ilin)
 
@@ -107,6 +118,8 @@ function Imode_sigmoid_eval_Vout(Iin, params)
 		sigmoid_V_int = memo_dict_Vout[params2]
 	else
 
+		# Simulate the sigmoid for a given current range and interpolate
+		# TODO: Make the current range adaptive, to make sure saturation is reached at the end of the simulation and a linear extrapolation is valid
 		Irange = (0,1e-6)
 		Vin_res, Vout_res = Imode_sigmoid_sim(Irange, params, return_V = true)
 
@@ -120,7 +133,7 @@ function Imode_sigmoid_eval_Vout(Iin, params)
 		Interpolations.deduplicate_knots!(Iin_res, move_knots = true)
 		Interpolations.deduplicate_knots!(Vout_res, move_knots = true)
 
-		sigmoid_V_int = linear_interpolation(Iin_res, Vout_res, extrapolation_bc=Line());
+		sigmoid_V_int = linear_interpolation(Iin_res, Vout_res, extrapolation_bc=Line()); # In the inactive and saturation regions, we extrapolate the response to a line
 
 		memo_dict_Vout[params2] = sigmoid_V_int
 	end
@@ -128,9 +141,8 @@ function Imode_sigmoid_eval_Vout(Iin, params)
 	return Iout(sigmoid_V_int(Iin), Vgain)
 end
 
+# For debugging purposes, same as Imode_sigmoid_eval_Iout but without memory
 function Imode_sigmoid_eval_nomem(Iin, params)
-
-	# @unpack Ithr, Igain, Ilin = params
 
 	Irange = (0,1e-6)
 	Iin_res, Iout_res = Imode_sigmoid_sim(Irange, params)
@@ -149,6 +161,7 @@ function Imode_sigmoid_eval_nomem(Iin, params)
 
 end
 
+# Wrapper function to evaluate the sigmoid model
 function Imode_sigmoid_eval(Iin, params; var_gain = false, use_mem = true)
 
 	if use_mem
