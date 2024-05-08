@@ -1,3 +1,23 @@
+#=
+Current mode sigmoid circuit simulation module
+
+The module exports the following function:
+Imode_sigmoid_eval(Iin, params; var_gain = false, use_mem = true)
+
+The function evaluates the output current of the sigmoid circuit for a given input current and parameters.
+The parameters are a NamedTuple with the following fields:
+- Ithr: The threshold current of the sigmoid
+- Igain: The gain current of the sigmoid
+- Ilin: The linear current of the sigmoid
+
+The function has two optional arguments:
+- var_gain: If true, the function will change its internal behavior to optimize memory usage when the gain current parameter frequently changes
+- use_mem: If true, the function will use a memory to store already computed sigmoid models. This should be left true for normal operation, but can be set to false for debugging purposes
+
+Author: Loris Mendolia
+Date: 08/05/2024
+University of Liège, Belgium
+=#
 module ImodeSigmoid
 
 using BifurcationKit, Parameters, NLsolve, Interpolations
