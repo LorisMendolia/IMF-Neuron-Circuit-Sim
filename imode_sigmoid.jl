@@ -1,3 +1,23 @@
+#=
+Current mode sigmoid circuit simulation module
+
+The module exports the following function:
+Imode_sigmoid_eval(Iin, params; var_gain = false, use_mem = true)
+
+The function evaluates the output current of the sigmoid circuit for a given input current and parameters.
+The parameters are a NamedTuple with the following fields:
+- Ithr: The threshold current of the sigmoid
+- Igain: The gain current of the sigmoid
+- Ilin: The linear current of the sigmoid
+
+The function has two optional arguments:
+- var_gain: If true, the function will change its internal behavior to optimize memory usage when the gain current parameter frequently changes
+- use_mem: If true, the function will use a memory to store already computed sigmoid models. This should be left true for normal operation, but can be set to false for debugging purposes
+
+Author: Loris Mendolia
+Date: 08/05/2024
+University of Liège, Belgium
+=#
 module ImodeSigmoid
 
 using BifurcationKit, Parameters, NLsolve, Interpolations
@@ -55,7 +75,7 @@ function Imode_sigmoid_sim(Iin_range, params; return_V = false)
 	solNL = nlsolve(x -> Imode_sigmoid_V(x,pars_V), x0, iterations=convert(Int64,1e6), ftol=1e-9, xtol=1e-6)
 
 	rfs(x, p) = (x2 = x[2], y=p) # Record the output voltage
-	prob = BifurcationProblem(Imode_sigmoid_V, solNL.zero, pars_V, (@lens _.Vin), record_from_solution = rfs) # Set up the bifurcation problem with the input voltage as the bifurcation parameter
+	prob = BifurcationProblem(Imode_sigmoid_V, solNL.zero, pars_V, (@optic _.Vin), record_from_solution = rfs) # Set up the bifurcation problem with the input voltage as the bifurcation parameter
 
 	# We set up continuation to use the selected input current range, by converting them to PMOS current mirror voltages
 	opts = ContinuationPar(p_min = V_P_diode(Iin_range[2]), p_max = V_P_diode(Iin_range[1]), n_inversion = 50, ds = 1e-6, dsmin = 1e-12, dsmax = 1e-3, max_steps = 1000, nev = 3)
