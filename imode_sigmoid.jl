@@ -74,7 +74,7 @@ function Imode_sigmoid_sim(Iin_range, params; return_V = false)
 
 	solNL = nlsolve(x -> Imode_sigmoid_V(x,pars_V), x0, iterations=convert(Int64,1e6), ftol=1e-9, xtol=1e-6)
 
-	rfs(x, p) = (x2 = x[2], y=p) # Record the output voltage
+	rfs(x, p; k...) = (x2 = x[2], y=p) # Record the output voltage
 	prob = BifurcationProblem(Imode_sigmoid_V, solNL.zero, pars_V, (@optic _.Vin), record_from_solution = rfs) # Set up the bifurcation problem with the input voltage as the bifurcation parameter
 
 	# We set up continuation to use the selected input current range, by converting them to PMOS current mirror voltages
